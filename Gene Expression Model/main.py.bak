@@ -1,0 +1,92 @@
+import torch
+import torch.optim as optim
+import torch.nn as nn
+import matplotlib.pyplot as plt
+from model import PINN
+from data_utils import simulate_data, load_and_prepare_data
+from train import prepare_dataloader, train_with_physics_loss, to_tensor
+# from plot_utils import plot_training_results, plot_results
+from GE_plot_utils import *
+
+
+# Convert data to PyTorch tensors
+def to_tensor(x, device, requires_grad=False):
+    return torch.tensor(x, dtype=torch.float32, requires_grad=requires_grad).to(device)
+
+def main():
+    ############################  Configuration Section ############################
+    # Define parameters
+    PN = 50  # Plasmid number
+    k_m = 0.6  # Transcription rate
+    gamma_m = 0.4  # mRNA degradation rate
+    k_p = 0.9  # Translation rate
+    gamma_p = 0.5  # Protein degradation rate
+    T = 50   # Total simulation time
+    num_samples = 120  # Number of samples for training data
+    m0 = 1  # Initial mRNA
+    p0 = 1  # Initial protein
+
+    # Neural Network Configuration
+    INPUT_DIM = 1
+    HIDDEN_DIMS = [100,100]  # List of hidden layer sizes
+    OUTPUT_DIM = 2  # Adjusted to match output dimensions
+
+    activation_functions = [nn.Sigmoid, nn.Tanh, nn.ReLU, nn.LeakyReLU, nn.ELU, nn.SELU, nn.Softmax, nn.LogSoftmax, nn.GELU]
+
+    # Select activation function
+    ACTIVATION_FN = activation_functions[8]  # GELU
+
+    # Hyperparameters
+    BATCH_SIZE = 32
+    LR = 0.001  # Learning rate
+    EPOCHS = 2000
+    EPOCH_INTERVAL = 500  # Interval for plotting and printing
+    PATIENCE = 1000  # Patience for early stopping
+
+    # Simulate data
+    t, m_data, p_data = simulate_data(PN, k_m, gamma_m, k_p, gamma_p, T, num_samples, m0, p0)
+
+    # Load and prepare data
+    t_train_set, t_test_set, data_m_train_set, data_p_train_set, data_m_test_set, data_p_test_set = load_and_prepare_data()
+
+    # Convert data to PyTorch tensors
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    t_train_tensor = to_tensor(t_train_set, device, requires_grad=True)
+    data_m_train_tensor = to_tensor(data_m_train_set, device)
+    data_p_train_tensor = to_tensor(data_p_train_set, device)
+    t_test_tensor = to_tensor(t_test_set, device, requires_grad=True)
+    data_m_test_tensor = to_tensor(data_m_test_set, device)
+    data_p_test_tensor = to_tensor(data_p_test_set, device)
+
+    # Initialize model, optimizer, and DataLoader
+    model = PINN(INPUT_DIM, HIDDEN_DIMS, OUTPUT_DIM, ACTIVATION_FN).to(device)
+    optimizer = optim.Adam(model.parameters(), lr=LR)
+    train_loader = prepare_dataloader(t_train_set, data_m_train_set, data_p_train_set, batch_size=BATCH_SIZE, device=device)
+
+    # Train the model
+    history, train_losses, test_losses = train_with_physics_loss(
+        model, optimizer, EPOCHS, PATIENCE, t_train_tensor, data_m_train_tensor, data_p_train_tensor,
+        t_test_tensor, data_m_test_tensor, data_p_test_tensor, k_m, gamma_m, k_p, gamma_p, PN
+    )
+
+
+    # Plot results
+    # Determine which epochs to plot (for all the EPOCH_INTERVAL or at once at the end) 
+    plots_interval = EPOCH_INTERVAL
+    # plots_interval = EPOCHS
+    if plots_interval == EPOCH_INTERVAL:
+        epochs_to_plot = [i for i in range(0, EPOCHS, EPOCH_INTERVAL)]
+        if epochs_to_plot:
+            plot_training_results(t_train_set, data_m_train_set, data_p_train_set, history, epochs_to_plot)
+            plot_testing_results(t_test_set, data_m_test_set, data_p_test_set, history, epochs_to_plot)
+            plot_loss_curves(train_losses, test_losses)
+    else:
+        # Plot results for the final epoch
+        final_epoch = max(history.keys(), default=0)
+        if final_epoch:
+            plot_training_results1(t_train_set, data_m_train_set, data_p_train_set, history, [final_epoch])
+            plot_testing_results1(t_test_set, data_m_test_set, data_p_test_set, history, [final_epoch])
+            plot_loss_curves1(train_losses, test_losses)
+
+if __name__ == "__main__":
+    main()

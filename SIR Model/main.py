@@ -1,0 +1,87 @@
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from data_utils import *
+from model import PINN
+from training import train_with_physics_loss
+from plot_utils import *
+
+import warnings
+warnings.filterwarnings("ignore")
+
+
+def main():
+    # Configuration parameters
+    beta = 0.5  # Infection rate
+    gamma = 0.05  # Recovery rate
+    T = 100  # Total time
+    num_samples = 120  # Number of samples
+    S0 = 0.99  # Initial susceptible population
+    I0 = 0.01  # Initial infected population
+    R0 = 0.0  # Initial recovered population
+    test_size = 0.2
+    random_state = 42
+    input_dim = 1
+    hidden_dims = [100,100,100]
+    output_dim = 3
+    activation_functions = [nn.Sigmoid, nn.Tanh, nn.ReLU, nn.LeakyReLU, nn.ELU, nn.SELU, nn.Softmax, nn.LogSoftmax, nn.GELU ]
+
+    activation_fn = activation_functions[1]
+    batch_size = 32
+    learning_rate = 1e-4
+    epochs = 3000
+    patience = 1000
+    EPOCH_INTERVAL = 500
+
+
+    # Simulate data
+    t, S_data, I_data, R_data = simulate_data(beta, gamma, T, num_samples, S0, I0, R0)
+
+    # Split data into training and validation sets and Load and prepare data 
+    t_train_set, t_test_set, data_S_train_set, data_I_train_set, data_R_train_set, data_S_test_set, data_I_test_set, data_R_test_set = load_and_prepare_data(test_size, random_state)
+
+    # Initialize the device
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+    # Initialize the model, optimizer, and loss function
+    model = PINN(input_dim, hidden_dims, output_dim, activation_fn).to(device)
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+
+    # Convert data to tensors and prepare DataLoader
+    train_loader = prepare_dataloader(t_train_set, data_S_train_set, data_I_train_set, data_R_train_set, batch_size, device)
+    t_train_tensor = to_tensor(t_train_set, device, requires_grad=True)
+    data_S_train_tensor = to_tensor(data_S_train_set, device)
+    data_I_train_tensor = to_tensor(data_I_train_set, device)
+    data_R_train_tensor = to_tensor(data_R_train_set, device)
+    t_val_tensor = to_tensor(t_test_set, device, requires_grad=False)
+    data_S_val_tensor = to_tensor(data_S_test_set, device)
+    data_I_val_tensor = to_tensor(data_I_test_set, device)
+    data_R_val_tensor = to_tensor(data_R_test_set, device)
+
+    # Train the model with physics loss
+    train_losses, val_losses, history = train_with_physics_loss(model, optimizer, epochs, patience, t_train_tensor, data_S_train_tensor, data_I_train_tensor, data_R_train_tensor, 
+                                                                t_val_tensor, data_S_val_tensor, data_I_val_tensor, data_R_val_tensor, beta, gamma)
+
+
+
+    ###### TESTING
+    with torch.no_grad():
+            output_test = model(t_val_tensor)
+            S_test_pred = output_test[:, 0].detach().cpu().numpy()
+            I_test_pred = output_test[:, 1].detach().cpu().numpy()
+            R_test_pred = output_test[:, 2].detach().cpu().numpy()
+
+    # Plot results
+    plots_interval = EPOCH_INTERVAL
+    # plots_interval = epochs
+    if plots_interval == EPOCH_INTERVAL:
+        epochs_to_plot = [i for i in range(0, epochs, EPOCH_INTERVAL)]
+        plot_training_results(t_train_set, data_S_train_set, data_I_train_set, data_R_train_set, history,  epochs_to_plot)
+        # plot_testing_results(t_test_set, data_S_test_set, data_I_test_set, data_R_test_set, history,  epochs_to_plot)
+        
+        plot_testing_results(t_val_tensor, data_S_val_tensor, data_I_val_tensor, data_R_val_tensor, S_test_pred, I_test_pred, R_test_pred)
+        plot_loss1(train_losses, val_losses)
+
+
+if __name__ == '__main__':
+     main()
