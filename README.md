@@ -73,8 +73,8 @@ Using PINNs to estimate unknown parameters from observable data (the inverse pro
 The libraries utilized in our code offer essential tools for analyzing forward and inverse problems across a wide range of ordinary differential equation systems. We use `scipy.integrate.odeint` to solve ordinary differential equations, with `numpy` and `pandas` handling numerical computations and data management. To partition data into training and testing sets, we employ `train_test_split` from `sklearn.model_selection`. Our deep learning models are implemented with `PyTorch`, using `torch` as the neural network framework. For efficient data loading and batching, we utilize `DataLoader` and `TensorDataset` from `torch.utils.data`. Network architectures are constructed with `torch.nn`, and optimization during training is handled via `torch.optim`. We use `xavier_uniform_` from `torch.nn.init` for initializing network weights. Finally, `plotnine` is employed for data visualization.
 
 
-For more information, please refer to the following: 
-- Amer Farea, Olli Yli-Harja, and Frank Emmert-Streib. ["Understanding Physics-Informed Neural Networks: Techniques, Applications, Trends, and Challenges"](https://www.mdpi.com/2673-2688/5/3/74). *Journal of AI*, 2024, 5(3), 1534-1557. [https://doi.org/10.3390/ai5030074](https://doi.org/10.3390/ai5030074)
+For more information about PINN, please refer to the following: 
+- Amer Farea, Olli Yli-Harja, and Frank Emmert-Streib. ["Understanding Physics-Informed Neural Networks: Techniques, Applications, Trends, and Challenges"](https://www.mdpi.com/2673-2688/5/3/74). *AI*, 2024, 5(3), 1534-1557. [https://doi.org/10.3390/ai5030074](https://doi.org/10.3390/ai5030074)
 
 
 ## Citation
