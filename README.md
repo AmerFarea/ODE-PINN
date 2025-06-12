@@ -75,6 +75,8 @@ The libraries utilized in our code offer essential tools for analyzing forward a
 
 For more information about PINN, please refer to the following: 
 - Amer Farea, Olli Yli-Harja, and Frank Emmert-Streib. ["Understanding Physics-Informed Neural Networks: Techniques, Applications, Trends, and Challenges"](https://www.mdpi.com/2673-2688/5/3/74). *AI*, 2024, 5(3), 1534-1557. [https://doi.org/10.3390/ai5030074](https://doi.org/10.3390/ai5030074)
+  
+- Amer Farea, Olli Yli-Harja, and Frank Emmert-Streib. ["Using Physics-Informed Neural Networks for Modeling Biological and Epidemiological Dynamical Systems"]( https://doi.org/10.3390/math13101664). *Mathematics*, 2025, 13(10), 1664. [https://doi.org/10.3390/math13101664](https://doi.org/10.3390/math13101664)
 
 
 ## Citation
