@@ -90,5 +90,16 @@ For more information about PINN, please refer to the following:
   year={2024},
   publisher={MDPI}
 }
+
+@article{farea2025using,
+  title={Using Physics-Informed Neural Networks for Modeling Biological and Epidemiological Dynamical Systems},
+  author={Farea, Amer and Yli-Harja, Olli and Emmert-Streib, Frank},
+  journal={Mathematics},
+  volume={13},
+  number={10},
+  pages={1664},
+  year={2025},
+  publisher={MDPI}
+}
 ```
 
